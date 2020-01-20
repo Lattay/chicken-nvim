@@ -21,7 +21,7 @@
             (loop (cdr rest))))))
 
 (define (make-predicate name)
-  (if (substring=? name "is_")
+  (if (substring=? name "is-")
       (string-append (substring name 3) "?")
       name))
 

@@ -39,7 +39,7 @@
                                  base-name)))))
     (values
       scheme-style-name
-      `(define (,scheme-style-name ,@(make-arg-list type-table parameters))
+      `(define (,scheme-style-name nvim-client ,@(make-arg-list type-table parameters))
          (begin . ,(validate-args type-table parameters))
          (let-values (((result status)
                        (mrpc-call! nvim-client ,base-name
@@ -84,7 +84,7 @@
     (lambda (param)
       (let ((type (vector-ref param 0))
             (var-name (vector-ref param 1)))
-        `(assert (and (quote ,type) ,(type-name->predicate type-table type) ,var-name))))
+        `(assert (and ,type (,(type-name->predicate type-table type) ,var-name)))))
     parameters))
 
 (define (make-arg-conversion type-table parameters)
