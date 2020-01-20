@@ -1,0 +1,11 @@
+((license "MIT")
+ (category tools)
+ (dependencies msgpack-rpc-client srfi-69)
+ (test-dependencies test msgpack-rpc-client srfi-69)
+ (author "Theo Cavignac")
+ (version "0.1.0")
+ (synopsis "Neovim plugin interface for Chicken 5")
+ (components 
+    (extension nvim
+      (source "src/nvim.scm")
+      (modules nvim))))
