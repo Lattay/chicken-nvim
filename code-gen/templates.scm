@@ -37,14 +37,16 @@
                              (if method
                                  (chop-prefix (get-prefix) base-name)
                                  base-name)))))
-    `(define (,scheme-style-name ,@(make-arg-list type-table parameters))
-       (begin . ,(validate-args type-table parameters))
-       (let-values (((result status)
-                     (mrpc-call! nvim-client ,base-name
-                                 ,@(make-arg-conversion type-table parameters))))
-         (if (equal? status 'success)
-             result
-             (error (nvim-error->string result)))))))
+    (values
+      scheme-style-name
+      `(define (,scheme-style-name ,@(make-arg-list type-table parameters))
+         (begin . ,(validate-args type-table parameters))
+         (let-values (((result status)
+                       (mrpc-call! nvim-client ,base-name
+                                   ,@(make-arg-conversion type-table parameters))))
+           (if (equal? status 'success)
+               result
+               (error (nvim-error->string result))))))))
 
 (define (type-name->predicate type-table type)
   (if (hash-table-exists? type-table type)
