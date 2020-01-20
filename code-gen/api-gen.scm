@@ -103,4 +103,6 @@
 (import chicken.pretty-print)
 (pretty-print
   '(import chicken.base chicken.type))
+(pretty-print
+  '(include "src/nvim-error.scm"))
 (for-each pretty-print (gen-module))
