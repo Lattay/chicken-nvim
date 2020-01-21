@@ -54,7 +54,7 @@ integration: test/tests.scm nvim.so
 	./run-test
 
 src/nvim.scm:
-	$(CSI)
+	$(CSI) -s code-gen/api-gen.scm > src/nvim.scm
 
 nvim.so: src/nvim.scm
 	$(CSC) $(CSC_OPTIONS) -s -j nvim -o $@ $<
