@@ -1,5 +1,6 @@
 (module template-tools (make-symbol
                         chop-prefix
+                        getter-client
                         scheme-style)
 
 (import scheme
@@ -12,13 +13,10 @@
 (define (scheme-case s)
   (string-translate s "ABCDEFGHIJKLMNOPQRSTUVWXYZ_" "abcdefghijklmnopqrstuvwxyz-"))
 
-(define (chop-prefix prefix-list name)
-  (let loop ((rest prefix-list))
-    (if (null? rest)
-        (error (string-append "Shitty chop on " name))
-        (if (substring=? name (car rest))
-            (substring name (string-length (car rest)))
-            (loop (cdr rest))))))
+(define (chop-prefix prefix name)
+  (if (substring=? name prefix)
+      (substring name (string-length prefix))
+      name))
 
 (define (make-predicate name)
   (if (substring=? name "is-")
@@ -27,4 +25,7 @@
 
 (define (scheme-style name)
   (make-predicate (scheme-case name)))
+
+(define (getter-client type)
+  (make-symbol (scheme-style type) "-client"))
 )
