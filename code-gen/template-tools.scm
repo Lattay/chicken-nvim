@@ -1,5 +1,6 @@
 (module template-tools (make-symbol
                         chop-prefix
+                        chop-nvim-without-conflict
                         getter-client
                         scheme-style)
 
@@ -17,6 +18,12 @@
   (if (substring=? name prefix)
       (substring name (string-length prefix))
       name))
+
+(define (chop-nvim-without-conflict name)
+  (let ((chopped (chop-prefix "nvim_" name)))
+    (if (alist-ref chopped '(("eval" . #t) ("list" . #t) ("set!" . #t)) equal?)
+        name
+        chopped)))
 
 (define (make-predicate name)
   (if (substring=? name "is-")

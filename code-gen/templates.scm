@@ -14,7 +14,12 @@
         (predicate (make-symbol name "?"))
         (getter-client (make-symbol name "-client"))
         (getter-id (make-symbol name "-id")))
-    `((define-record-type ,type-name
+    `((export ,type-name)
+      (export ,constructor-name)
+      (export ,predicate)
+      (export ,getter-client)
+      (export ,getter-id)
+      (define-record-type ,type-name
          (,constructor-name client res-id)
          ,predicate
          (client ,getter-client)
@@ -22,12 +27,12 @@
 
        (define (,(make-symbol name "->extension") ,short-name)
          (assert (,predicate ,short-name))
-         (make-extension ,ext-id (pack/blob (,getter-id ,short-name))))
+         (make-extension ,ext-id (mp:pack/blob (,getter-id ,short-name))))
 
        (define (,(make-symbol "extension->" name) client ext)
          (assert (extension? ext))
          (if (= (extension-type ext) ,ext-id)
-             (,constructor-name (neovim-client client) (unpack/blob (extension-data ext)))
+             (,constructor-name (neovim-client client) (mp:unpack/blob (extension-data ext)))
              #f)))))
 
 (define (make-method type-table scheme-style-name base-name self-type parameters)
