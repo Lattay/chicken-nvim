@@ -21,6 +21,10 @@
     neovim?
     (mrpc-client neovim-client))
 
+  (define (neovim-nvim obj)
+    (assert (neovim? obj))
+    obj)
+
   ;; create a connection to an nvim instance
   ;; return a neovim object
   (define (connect mode . args)

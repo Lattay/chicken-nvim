@@ -54,6 +54,7 @@
               (let* ((base-name (hash-table-ref fun "name"))
                      (method (hash-table-ref/default fun "method" #f))
                      (parameters (vector->list (hash-table-ref fun "parameters")))
+                     (return-type (hash-table-ref fun "return_type"))
                      ; (return-type (hash-table-ref fun "return_type"))
                      (get-prefix
                        (lambda ()
@@ -66,24 +67,29 @@
                                                  (chop-prefix (get-prefix) base-name)
                                                  (chop-nvim-without-conflict base-name))))))
                 (if (hash-table-exists? func-table name)
-                    (let ((func (hash-table-ref func-table name)))
-                      (if method
-                          (if (equal? (cdr parameters) (hash-table-ref func 'parameters))
-                              (hash-table-set! func 'obj-type `((,(vector-ref (car parameters) 0) . ,base-name)
-                                                                . ,(hash-table-ref func 'obj-type)))
-                              (error "I did not expected methods to have different signatures out of the first argument."))
-                          (hash-table-set! func 'obj-type `(("Neovim" . ,base-name)
-                                                            . ,(hash-table-ref func 'obj-type)))))
+                    (let* ((func (hash-table-ref func-table name))
+                           (known-parameters (hash-table-ref func 'parameters)))
+                      (unless (equal? known-parameters (if method (cdr parameters) parameters))
+                        (error "I did not expect methods to have different signatures out of the first argument."))
+                      (when (and method
+                                 (equal? (vector-ref (car parameters) 0) "Object"))
+                        (error "I did not expect methods to apply to Object pseudo-type."))
+                      (hash-table-set! func 'obj-type `((,(if method
+                                                              (vector-ref (car parameters) 0)
+                                                              "Neovim")
+                                                          ,base-name . ,return-type)
+                                                        . ,(hash-table-ref func 'obj-type))))
                     (hash-table-set! func-table name
                                      (alist->hash-table
-                                       (if method
-                                           `((parameters . ,(cdr parameters))
-                                             (obj-type . ((,(vector-ref (car parameters) 0) . ,base-name))))
-                                           `((parameters . ,parameters)
-                                             (obj-type . (("Neovim" . ,base-name))))))))))
+                                       `((parameters . ,(if method (cdr parameters) parameters))
+                                         (obj-type . ((,(if method
+                                                            (vector-ref (car parameters) 0)
+                                                            "Neovim")
+                                                        ,base-name . ,return-type)))))))))
             (remove-deprecated (vector->list functions)))
 
           (values
+            ; version
             (list
               (format "~A.~A.~A"
                     (hash-table-ref version "major")
@@ -91,8 +97,13 @@
                     (hash-table-ref version "patch"))
               (hash-table-ref version "api_level")
               (hash-table-ref version "api_compatible"))
+            ; functions to be exported
             (hash-table-keys func-table)
-            type-code
+            ; type related code
+            (append
+              (make-polymorphic-conversions type-table)
+              type-code)
+            ; function related code
             (map
               (lambda (func)
                 (let ((name (car func))
@@ -100,7 +111,7 @@
                   (let ((parameters (hash-table-ref function 'parameters))
                         (obj-types (hash-table-ref/default function 'obj-type #f)))
                     (if (= (length obj-types) 1)
-                        (make-method type-table name (cdar obj-types) (caar obj-types) parameters)
+                        (make-method type-table name (cadar obj-types) (caar obj-types) parameters (cddar obj-types))
                         (make-multi-method type-table name obj-types parameters)))))
               (hash-table->alist func-table))))))))
 )
