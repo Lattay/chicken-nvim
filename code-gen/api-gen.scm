@@ -28,8 +28,6 @@
   (let ((port (open-input-pipe "nvim --api-info")))
     (let* ((api-info (mp:unpack port))
            (version (hash-table-ref api-info "version"))
-           ; (version.api_level (hash-table-ref api-info "version.api_level"))
-           ; (version.api_compatible (hash-table-ref api-info "version.api_compatible"))
            (functions (hash-table-ref api-info "functions"))
            (ui-events (hash-table-ref api-info "ui_events"))
            (ui-options (hash-table-ref api-info "ui_options"))
@@ -149,6 +147,7 @@ EOS
     (newline)
     (display version-comment)
     (newline) (newline)
+    (for-each pretty-print (make-version-info version))
     (for-each (lambda (func-name) (pretty-print `(export ,func-name))) exported)
     (for-each pretty-print func-code)))
 

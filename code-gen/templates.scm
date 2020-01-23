@@ -69,17 +69,17 @@
      (begin
        ,(validate-arg type-table self-type 'self)
        . ,(validate-args type-table parameters))
-     (let ((client (,(getter-nvim type-table self-type) self)))
-       (let-values (((result status)
-                     ,(if (equal? self-type "Neovim")
-                          `(mrpc:call! client ,base-name
+     (let-values (((result status)
+                   ,(let ((getter (getter-nvim type-table self-type)))
+                      (if (equal? self-type "Neovim")
+                          `(mrpc:call! (,getter self) ,base-name
                                        . ,(make-args-conversion type-table parameters))
-                          `(mrpc:call! client ,base-name
+                          `(mrpc:call! (,getter self) ,base-name
                                        ,(make-arg-conversion type-table self-type 'self)
-                                       . ,(make-args-conversion type-table parameters)))))
-         (if (equal? status 'success)
-             ,(make-result-conversion type-table return-type 'result)
-             (error (nvim-error->string result)))))))
+                                       . ,(make-args-conversion type-table parameters))))))
+       (if (equal? status 'success)
+           ,(make-result-conversion type-table return-type 'result)
+           (error (nvim-error->string result))))))
 
 (define (make-multi-method type-table scheme-style-name obj-types parameters)
   `(define (,scheme-style-name self . ,(make-arg-list type-table parameters))
@@ -138,7 +138,7 @@
 (define (validate-args type-table parameters)
   (map
     (lambda (v)
-      (validate-arg type-table (vector-ref v 0) (vector-ref v 1)))
+      (validate-arg type-table (vector-ref v 0) (string->symbol (vector-ref v 1))))
     parameters))
 
 (define (make-arg-conversion type-table type var-name)
@@ -180,4 +180,10 @@
 
 (define (scheme-type type-table type)
   (hash-table-ref (hash-table-ref type-table type) 'scheme-name))
+
+(define (make-version-info version)
+  `((define (nvim-version)
+      ,(car version))
+    (define (api-version)
+      ,(cdr version))))
 )
