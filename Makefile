@@ -53,12 +53,15 @@ integration: test/tests.scm nvim.so
 	$(CSC) $(CSC_OPTIONS) $< -o run-test
 	./run-test
 
-gen:
-	$(CSI) -s code-gen/api-gen.scm
-
 nvim.so: src/nvim.scm src/nvim-function-binding.scm src/nvim-type-binding.scm
 	$(CSC) $(CSC_OPTIONS) -s -j nvim -o $@ $<
 	$(CSC) $(CSC_OPTIONS) nvim.import.scm -dynamic
+
+src/nvim-function-binding.scm: gen
+src/nvim-type-binding.scm: gen
+
+gen:
+	$(CSI) -s code-gen/api-gen.scm
 
 clean:
 	rm -f test/*.o *.o run-test unit-* *.c test/*.c *.so *.import.scm src/*.c src/*.so

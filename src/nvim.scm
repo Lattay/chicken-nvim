@@ -25,9 +25,14 @@
     (assert (neovim? obj))
     obj)
 
+  ;; Check arg list for mrpc:make-client
+  (define (valid-arglist? args)
+    #t)
+
   ;; create a connection to an nvim instance
   ;; return a neovim object
   (define (connect mode . args)
+    (assert (valid-arglist? args) "Arg list is not valid to create a MRPC client.")
     (let ((client (apply mrpc:make-client (cons mode args))))
       (mrpc:connect! client)
       (make-neovim client)))

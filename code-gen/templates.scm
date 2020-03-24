@@ -1,7 +1,8 @@
 (module templates (make-type
                    make-method
                    make-polymorphic-conversions
-                   make-multi-method)
+                   make-multi-method
+                   make-version-info)
 (import scheme
         chicken.base
         chicken.string)
@@ -23,7 +24,7 @@
       (define-record-type ,type-name
          (,constructor-name client res-id)
          ,predicate
-         (nvim ,getter-nvim)
+         (client ,getter-nvim)
          (res-id ,getter-id))
 
        (define (,(make-symbol name "->extension") ,short-name)
@@ -72,9 +73,9 @@
      (let-values (((result status)
                    ,(let ((getter (getter-nvim type-table self-type)))
                       (if (equal? self-type "Neovim")
-                          `(mrpc:call! (,getter self) ,base-name
+                          `(mrpc:call! (neovim-client (,getter self)) ,base-name
                                        . ,(make-args-conversion type-table parameters))
-                          `(mrpc:call! (,getter self) ,base-name
+                          `(mrpc:call! (neovim-client (,getter self)) ,base-name
                                        ,(make-arg-conversion type-table self-type 'self)
                                        . ,(make-args-conversion type-table parameters))))))
        (if (equal? status 'success)
@@ -92,7 +93,7 @@
                    (base-name (cadr type-pair))
                    (return-type (cddr type-pair)))
                `((,(type-name->predicate type-table self-type) self)
-                 (let ((client (,(getter-nvim type-table self-type) self)))
+                 (let ((client (neovim-client (,(getter-nvim type-table self-type) self))))
                    (let-values (((result status)
                                  ,(if (equal? self-type "Neovim")
                                       `(mrpc:call! client ,base-name
@@ -162,7 +163,7 @@
 (define (make-result-conversion type-table type var-name)
   (cond
     ((equal? type "Object")
-     `(unpack self-nvim ,var-name))
+     `(unpack self ,var-name))
     ((hash-table-exists? type-table type)
      `(,(make-symbol "extension->"
                      (scheme-type type-table type))
@@ -185,5 +186,5 @@
   `((define (nvim-version)
       ,(car version))
     (define (api-version)
-      ,(cdr version))))
+      ,(cons 'list (cdr version)))))
 )
