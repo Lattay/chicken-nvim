@@ -6,13 +6,16 @@
               neovim-client
               connect
               nvim-error->string
+              run
               )
   (import scheme
           chicken.base
-          chicken.module)
+          chicken.module
+          chicken.process)
   (import srfi-69
           (prefix msgpack mp:)
-          (prefix msgpack-rpc-client mrpc:))
+          (prefix msgpack-rpc-client mrpc:)
+          (prefix mrpc-client-unix mrpc-u:))
 
   (define (true . args) #t)
 
@@ -29,13 +32,67 @@
   (define (valid-arglist? args)
     #t)
 
+  (define *system-default* (make-parameter 'unix))
+
+  (define (run-nvim args)
+    (display args))
+    ; (apply process-run (cons "nvim" args)))
+
+
+  ;; run neovim as headless listening
+  (define (run #!optional (mode (*system-default*))
+               #!key (port 8888)
+               (socket #f)
+               (hostname "127.0.0.1")
+               (headless #t)
+               (options '()))
+    (let ((args (if headless (cons "--headless" options) options)))
+      (case mode
+        ((unix)
+         (run-nvim 
+          (if (and socket (string? socket)) 
+            (append args 
+                    (list "--listen" socket))
+            args)))
+        ((tcp)
+         (run-nvim
+           (append args 
+                   (list "--listen"
+                         (string-append hostname ":" (number->string port))))))
+        ((embed)
+         ; TODO find a way to have RPC over STIO without buffering messing
+         (error "Not implemented yet")
+         (run-nvim (cons "--embed" options)))
+        (else
+          (error "Not implemented yet")))))
+
+  ;; run neovim in embeded mode and connect to it
+  ;; return the neovim connection object
+  (define (embed #!key (options '()))
+    (error "Not implemented yet!")
+    (let ((pid (run 'embed options: options)))
+      (mrpc:make-client 'extend
+        (lambda () '()))))
+
+
   ;; create a connection to an nvim instance
   ;; return a neovim object
   (define (connect mode . args)
     (assert (valid-arglist? args) "Arg list is not valid to create a MRPC client.")
-    (let ((client (apply mrpc:make-client (cons mode args))))
-      (mrpc:connect! client)
-      (make-neovim client)))
+    (case mode
+      ((tcp)
+       (let ((client (apply mrpc:make-client (cons mode args))))
+         (mrpc:connect! client)
+         (make-neovim client)))
+      ((unix)
+       (assert (and "Path is string" (not (null? args)) (string? (car args))))
+       (let ((client
+               (apply mrpc:make-client
+                      (append
+                        (list 'extend (mrpc-u:make-unix-port-connector (car args)))
+                        (cdr args)))))
+         (mrpc:connect! client)
+         (make-neovim client)))))
 
   (define (nvim-error->string error-type->error-name err)
     (let ((type (vector-ref err 0))
