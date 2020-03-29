@@ -8,4 +8,7 @@
  (components 
     (extension nvim
       (source "src/nvim.scm")
-      (modules nvim))))
+      (modules nvim))
+    (extension nvim-plugin
+      (source "src/nvim-plugin.scm")
+      (modules nvim-plugin))))
